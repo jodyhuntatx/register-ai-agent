@@ -1,0 +1,1080 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Secure AI API",
+    "description": "Secure AI APIs support agent creation, metadata updates, state control, discovery and deletion.",
+    "termsOfService": "https://cyberark.com/terms/",
+    "contact": {
+      "name": "CyberArk",
+      "url": "http://cyberark.com/contact",
+      "email": "contact@cyberark.com"
+    },
+    "license": {
+      "name": "Apache 2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+    },
+    "version": "main"
+  },
+  "servers": [
+    {
+      "url": "https://virtserver.swaggerhub.com/CyberArk/sai-api/main",
+      "description": "SwaggerHub API Auto Mocking"
+    },
+    {
+      "url": "https://virtserver.swaggerhub.com/CyberArk/api-first-template/main",
+      "description": "SwaggerHub API Auto Mocking Test",
+      "x-internal": false
+    },
+    {
+      "url": "https://{tenant}/api",
+      "variables": {
+        "tenant": {
+          "description": "tenant identifier",
+          "default": "example"
+        }
+      },
+      "x-internal": false
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "Agents",
+      "description": "Agent inventory and governance"
+    }
+  ],
+  "paths": {
+    "/api/agents": {
+      "get": {
+        "tags": [
+          "Agents"
+        ],
+        "summary": "List agents",
+        "description": "Retrieves a list of all agents within a tenant. \nEach agent in the list includes key details such as its clientId, description, and redirectCallbackUrls. ",
+        "operationId": "list-agents",
+        "parameters": [
+          {
+            "name": "Accept",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "application/x.secureai.beta+json"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of agents",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListAgentsResponse"
+                },
+                "example": {
+                  "count": 2,
+                  "limit": 2,
+                  "offset": 0,
+                  "agents": [
+                    {
+                      "id": "a8f9c2d1-3e4b-42fa-bb71-2a913d45ef12",
+                      "name": "Copilot",
+                      "type": "COPILOT",
+                      "state": "ACTIVE",
+                      "owner": "IT",
+                      "tags": {
+                        "environment": "production",
+                        "department": "finance"
+                      },
+                      "createdAt": "2025-09-18T09:35:00Z",
+                      "createdBy": "user_x@company.com",
+                      "updatedAt": "2025-09-18T10:10:00Z",
+                      "updatedBy": "user_y@company.com",
+                      "redirectCallbackUrls": [
+                        "https://global.consent.azure-apim.net/redirect/cr783-5fs-5f48af71427f7d7ecf"
+                      ],
+                      "instructions": "Optional description",
+                      "description": "AI assistant for productivity use cases"
+                    },
+                    {
+                      "id": "d3f1b8a7-2f55-4a77-a23e-6b182d81e1cc",
+                      "name": "Claude",
+                      "type": "CLAUDE",
+                      "state": "SUSPENDED",
+                      "owner": "R&D",
+                      "tags": {
+                        "environment": "staging"
+                      },
+                      "createdAt": "2025-09-15T14:20:00Z",
+                      "createdBy": "user_z@company.com",
+                      "updatedAt": "2025-09-17T08:40:00Z",
+                      "updatedBy": "user_z@company.com",
+                      "redirectCallbackUrls": [
+                        "https://staging.company.com/claude/callback"
+                      ],
+                      "instructions": "Paused for maintenance",
+                      "description": "Experimental agent for R&D"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Agents"
+        ],
+        "summary": "Register AI agent",
+        "description": "Registers a new agent in PENDING_CONNECTION state and atomically issues bootstrap credentials (clientId, clientSecret, gatewayUrl)",
+        "operationId": "register-agent",
+        "parameters": [
+          {
+            "name": "Accept",
+            "in": "header",
+            "description": "This is a beta API. The version must be specified in the Accept headers of the request.",
+            "required": true,
+            "schema": {
+              "title": "Accept",
+              "type": "string",
+              "example": "application/x.secureai.beta+json"
+            },
+            "example": {
+              "default": {
+                "value": "application/x.secretshub.beta+json"
+              }
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterAgentRequest"
+              },
+              "examples": {
+                "Example 1": {
+                  "value": {
+                    "name": "string",
+                    "type": "CHATGPT, CLAUDE, GEMINI, COPILOT, PERPLEXITY, SALESFORCE, SERVICENOW, GROK, CUSTOM",
+                    "redirectCallbackUrls": [
+                      "http://example.com"
+                    ],
+                    "description": "string",
+                    "owner": "string",
+                    "tags": {
+                      "property1": "string",
+                      "property2": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Agent registered",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentWithCredentials"
+                },
+                "examples": {
+                  "Example 1": {
+                    "value": {
+                      "id": "b7f2a4e3-2c6a-41a9-95af-56ce2290cfa1",
+                      "name": "FinanceBot",
+                      "type": "COPILOT",
+                      "description": "AI agent for internal sales dashboard",
+                      "owner": "IT",
+                      "tags": {
+                        "environment": "production",
+                        "department": "sales",
+                        "approved": ""
+                      },
+                      "redirectCallbackUrls": [
+                        "https://my-crm.com/oauth/callback"
+                      ],
+                      "state": {
+                        "state": "ACTIVE",
+                        "message": "Successfully connected"
+                      },
+                      "createdAt": "2019-08-24T14:15:22Z",
+                      "updatedAt": "2019-08-24T14:15:22Z",
+                      "createdBy": "user_x@company.com",
+                      "updatedBy": "user_x@company.com",
+                      "credentials": {
+                        "clientId": "agent-123-client",
+                        "clientSecret": "s3cr3t-abc-xyz-789",
+                        "gatewayUrl": "https://cyberark.cloud"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimitError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/agents/{agentId}": {
+      "get": {
+        "tags": [
+          "Agents"
+        ],
+        "summary": "Get agent",
+        "description": "Retrieves the full details of a single agent by its ID, including its clientId, description, owner, current lifecycle status, and callback URLs. \nThe agent's status is represented in a nested status object. \nIf the state is ERROR, this object will include a descriptive message field .\n",
+        "operationId": "get-agent",
+        "parameters": [
+          {
+            "name": "agentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Accept",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "application/x.secureai.beta+json"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Agent details retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Agent"
+                },
+                "examples": {
+                  "Agent": {
+                    "value": {
+                      "id": "a8f9c2d1-3e4b-42fa-bb71-2a913d45ef12",
+                      "name": "IT Operation agent",
+                      "type": "COPILOT",
+                      "description": "AI Agent for IT operation tools",
+                      "owner": "IT",
+                      "tags": "[\"env\": \"production\", \"finance\": \"\"]",
+                      "redirectCallbackUrls": "[\"https://my-crm.com/oauth/callback\"]",
+                      "state": {
+                        "state": "ACTIVE",
+                        "message": "Successfully connected"
+                      },
+                      "createdAt": "2025-09-18T09:35:00Z",
+                      "updatedAt": "2025-09-18T09:35:00Z",
+                      "createdBy": "user_x@company.com",
+                      "updatedBy": "user_x@company.com"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Agents"
+        ],
+        "summary": "Delete agent",
+        "description": "Permanently and irreversibly deletes an agent and its associated metadata. \nAn agent can only be deleted if its current state is SUSPENDED or PENDING_CONFIGURATION. \nAn ACTIVE agent cannot be deleted and must be suspended first.\n",
+        "operationId": "delete-agent",
+        "parameters": [
+          {
+            "name": "agentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Accept",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "application/x.secureai.beta+json"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Agent deleted successfully"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "Agents"
+        ],
+        "summary": "Edit agent",
+        "description": "Replaces the entire agent resource with the provided data. \nThis endpoint is used for updating metadata fields. \nTools and connectors are managed via separate endpoints.",
+        "operationId": "edit-agent",
+        "parameters": [
+          {
+            "name": "agentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Accept",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "application/x.secureai.beta+json"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditAgentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Agent updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Agent"
+                },
+                "examples": {
+                  "Example 1": {
+                    "value": {
+                      "id": "a8f9c2d1-3e4b-42fa-bb71-2a913d45ef12",
+                      "name": "IT Operation agent",
+                      "type": "COPILOT",
+                      "description": "AI Agent for IT operation tools",
+                      "owner": "IT",
+                      "tags": "[\"env\": \"production\", \"finance\": \"\"]",
+                      "redirectCallbackUrls": "[\"https://my-crm.com/oauth/callback\"]",
+                      "state": {
+                        "state": "ACTIVE",
+                        "message": "Successfully connected"
+                      },
+                      "createdAt": "2025-09-18T09:35:00Z",
+                      "updatedAt": "2025-09-18T09:35:00Z",
+                      "createdBy": "user_x@company.com",
+                      "updatedBy": "user_x@company.com"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/agents/{agentId}/state": {
+      "post": {
+        "tags": [
+          "Agents"
+        ],
+        "summary": "Set agent state",
+        "description": "Admin-controlled API to change the lifecycle state of an agent between ACTIVE and SUSPENDED. Does not directly set ERROR or PENDING_CONNECTION. Those are system-assigned.\n",
+        "operationId": "set-agent-state",
+        "parameters": [
+          {
+            "name": "agentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Accept",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "application/x.secureai.beta+json"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/agentId_state_body"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Agent state updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/inline_response_200"
+                },
+                "examples": {
+                  "Response": {
+                    "value": {
+                      "id": "string",
+                      "state": {
+                        "state": "ACTIVE",
+                        "message": "Successfully connected"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "422": {
+            "$ref": "#/components/responses/UnprocessableError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "RegisterAgentRequest": {
+        "required": [
+          "name",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "maxLength": 256,
+            "minLength": 2,
+            "pattern": "^[A-Za-z0-9 _-]+$",
+            "type": "string",
+            "description": "The human-readable, unique name for the agent provided by the user (e.g., \"Finance Copilot\")."
+          },
+          "type": {
+            "maxLength": 256,
+            "minLength": 2,
+            "type": "string",
+            "description": "The predefined type of the agent (e.g., COPILOT, CLAUDE, CUSTOM).",
+            "example": "CHATGPT, CLAUDE, GEMINI, COPILOT, PERPLEXITY, SALESFORCE, SERVICENOW, GROK, CUSTOM"
+          },
+          "redirectCallbackUrls": {
+            "maxItems": 10,
+            "minItems": 0,
+            "type": "array",
+            "description": "The list of approved \"return addresses\" for the agent. This is auto-filled for predefined types and manually entered for CUSTOM types.",
+            "items": {
+              "maxLength": 2048,
+              "pattern": "^https://.*",
+              "type": "string",
+              "format": "uri"
+            }
+          },
+          "description": {
+            "maxLength": 500,
+            "type": "string",
+            "description": "An optional, human-readable description of the agent's purpose."
+          },
+          "owner": {
+            "minLength": 2,
+            "type": "string",
+            "description": "An optional field indicating the business or technical owner (e.g., \"Finance\", \"IT\")."
+          },
+          "tags": {
+            "maxProperties": 10,
+            "type": "object",
+            "additionalProperties": {
+              "maxLength": 100,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "type": "string"
+            },
+            "description": "Optional key-value pairs used for categorization and filtering (e.g., { \"env\": \"production\" })."
+          }
+        },
+        "x-examples": {
+          "Example 1": {
+            "name": "Agent-Bob",
+            "type": "CHATGPT, CLAUDE, GEMINI, COPILOT, PERPLEXITY, SALESFORCE, SERVICENOW, GROK",
+            "redirectCallbackUrls": [
+              "http://example.com"
+            ],
+            "description": "AI Agent for escorting IT operations",
+            "owner": "IT",
+            "tags": {
+              "environment": "production",
+              "verified": ""
+            }
+          }
+        }
+      },
+      "EditAgentRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "maxLength": 256,
+            "minLength": 2,
+            "pattern": "^[A-Za-z0-9 _-]+$",
+            "type": "string"
+          },
+          "description": {
+            "maxLength": 500,
+            "type": "string"
+          },
+          "owner": {
+            "minLength": 2,
+            "type": "string"
+          },
+          "redirectCallbackUrls": {
+            "maxItems": 10,
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "maxLength": 2048,
+              "pattern": "^https://.*",
+              "type": "string",
+              "format": "uri"
+            }
+          },
+          "clientId": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "vboda6ngyjpwq"
+            }
+          },
+          "tags": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "status": {
+            "$ref": "#/components/schemas/AgentStatus"
+          }
+        },
+        "x-examples": {
+          "Example 1": {
+            "name": "Finance Query Agent",
+            "owner": "Finance Query Agent",
+            "tags": {
+              "finance": "",
+              "env": "production"
+            }
+          }
+        }
+      },
+      "Agent": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The unique, system-generated identifier for the agent (e.g., a8f9c2d1-3e4b-42fa-bb71-2a913d45ef12).",
+            "example": "a8f9c2d1-3e4b-42fa-bb71-2a913d45ef12"
+          },
+          "name": {
+            "type": "string",
+            "description": "The human-readable, unique name for the agent provided by the user (e.g., \"Finance Copilot\").",
+            "example": "IT Operation agent"
+          },
+          "type": {
+            "type": "string",
+            "description": "The predefined type of the agent (e.g., COPILOT, CLAUDE, CUSTOM).",
+            "example": "COPILOT"
+          },
+          "description": {
+            "type": "string",
+            "description": "An optional, human-readable description of the agent's purpose.",
+            "example": "AI Agent for IT operation tools"
+          },
+          "owner": {
+            "type": "string",
+            "description": "An optional field indicating the business or technical owner (e.g., \"Finance\", \"IT\").",
+            "example": "IT"
+          },
+          "tags": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Optional key-value pairs used for categorization and filtering (e.g., { \"env\": \"production\" }).",
+            "example": "[\"env\": \"production\", \"finance\": \"\"]"
+          },
+          "redirectCallbackUrls": {
+            "type": "array",
+            "description": "The list of approved \"return addresses\" for the agent. This is auto-filled for predefined types and manually entered for CUSTOM types.",
+            "example": "[\"https://my-crm.com/oauth/callback\"]",
+            "items": {
+              "type": "string",
+              "format": "uri"
+            }
+          },
+          "status": {
+            "$ref": "#/components/schemas/AgentStatus"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "An ISO 8601 timestamp of when the agent was first registered.",
+            "format": "date-time",
+            "example": "2025-09-18T09:35:00Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "An ISO 8601 timestamp of when the agent's metadata was last updated.",
+            "format": "date-time",
+            "example": "2025-09-18T09:35:00Z"
+          },
+          "createdBy": {
+            "type": "string",
+            "description": "The identifier of the user who registered the agent.",
+            "example": "user_x@company.com"
+          },
+          "updatedBy": {
+            "type": "string",
+            "description": " The identifier of the user who last modified the agent.",
+            "example": "user_x@company.com"
+          }
+        },
+        "description": ""
+      },
+      "AgentWithCredentials": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Agent"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "credentials": {
+                "$ref": "#/components/schemas/AgentWithCredentials_credentials"
+              }
+            }
+          }
+        ]
+      },
+      "AgentStatus": {
+        "title": "AgentStatus",
+        "required": [
+          "message",
+          "state"
+        ],
+        "type": "object",
+        "properties": {
+          "state": {
+            "title": "Agent status value",
+            "type": "string",
+            "description": "The current operational state of the agent. Can be one of PENDING_CONNECTION, ACTIVE, SUSPENDED, or ERROR.",
+            "example": "ACTIVE",
+            "enum": [
+              "PENDING_CONNECTION",
+              "ACTIVE",
+              "SUSPENDED"
+            ]
+          },
+          "message": {
+            "type": "string",
+            "description": "An optional field that is only present when state is ERROR. It provides a human-readable reason for the failure (e.g., \"Invalid client credentials. Please verify your client ID and secret\").",
+            "example": "Successfully connected"
+          }
+        },
+        "description": "A nested object containing the real-time operational state of the agent.",
+        "x-examples": {
+          "Example 1": {
+            "state": "PENDING_CONNECTION",
+            "message": "Successfully connected"
+          }
+        }
+      },
+      "ListAgentsResponse": {
+        "type": "object",
+        "properties": {
+          "agents": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Agent"
+            }
+          },
+          "count": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "limit": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "offset": {
+            "type": "integer"
+          }
+        },
+        "x-examples": {
+          "Example 1": {
+            "agents": [
+              {
+                "id": "a8f9c2d1-3e4b-42fa-bb71-2a913d45ef12",
+                "name": "Copilot-agent",
+                "type": "Copilot",
+                "description": "AI Agent for our work",
+                "owner": "IT",
+                "tags": {
+                  "environment": "production",
+                  "department": "finance"
+                },
+                "redirectCallbackUrls": [
+                  "https://my-crm.com/oauth/callback"
+                ],
+                "state": {
+                  "state": "ACTIVE",
+                  "message": "Successfully connected"
+                },
+                "createdAt": "2019-08-24T14:15:22Z",
+                "updatedAt": "2019-08-24T14:15:22Z",
+                "createdBy": "user_x@company.com",
+                "updatedBy": "user_x@company.com",
+                "Mcpname": "CyberArk Secure Infrastructure Access",
+                "McpUrl": "https://tenantdomain.com/mcp"
+              }
+            ],
+            "count": 1,
+            "limit": 0,
+            "offset": 0
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "An optional, machine-readable code (e.g., INVALID_CREDENTIALS) that is only present when state is ERROR."
+          },
+          "message": {
+            "type": "string",
+            "description": "A human-readable summary of the error (e.g., \"Agent not found\")."
+          },
+          "description": {
+            "type": "string",
+            "description": "An optional, more detailed explanation of the error (e.g., \"No agent exists with the given ID\")."
+          }
+        }
+      },
+      "ValidationError": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "The primary error code, always CEM_INPUT_VALIDATION_FAILED (or similar)."
+          },
+          "message": {
+            "type": "string",
+            "description": "The primary, high-level message (e.g., \"Input validation failed\")."
+          },
+          "errors": {
+            "type": "array",
+            "description": "An array where each object represents a single field that failed validation.",
+            "items": {
+              "$ref": "#/components/schemas/ValidationError_errors"
+            }
+          }
+        }
+      },
+      "agentId_state_body": {
+        "required": [
+          "state"
+        ],
+        "type": "object",
+        "properties": {
+          "state": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "SUSPENDED"
+            ]
+          }
+        }
+      },
+      "inline_response_200": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AgentStatus"
+          }
+        }
+      },
+      "AgentWithCredentials_credentials": {
+        "type": "object",
+        "properties": {
+          "clientId": {
+            "type": "string",
+            "description": "The public identifier for the agent, used in the OAuth 2.0 flow."
+          },
+          "clientSecret": {
+            "type": "string",
+            "description": "The private secret for the agent. This is shown only once and is not stored by CyberArk."
+          },
+          "gatewayUrl": {
+            "type": "string",
+            "description": "The unique, per-tenant URL of the Secure AI Gateway that the agent must connect to.",
+            "format": "uri"
+          },
+          "authorizationUrl": {
+            "type": "string",
+            "description": "The URL where the agent must send the user for authentication (e.g., for Copilot).",
+            "x-stoplight": {
+              "id": "blni2m95q84l5"
+            }
+          },
+          "tokenUrlTemplate": {
+            "type": "string",
+            "description": "The URL the agent uses to exchange an authorization code for an access token.",
+            "x-stoplight": {
+              "id": "a3ei5m2sbfjm5"
+            }
+          },
+          "refreshUrl": {
+            "type": "string",
+            "description": "The URL the agent uses to refresh an expired access token.",
+            "x-stoplight": {
+              "id": "703ear2ydwb8u"
+            }
+          }
+        },
+        "description": " A nested object containing the secrets needed to connect the agent."
+      },
+      "ValidationError_errors": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "A machine-readable code for the specific field error (e.g., CEM_INVALID_VALUE)."
+          },
+          "message": {
+            "type": "string",
+            "description": "A human-readable message for the specific field error (e.g., \"redirectCallbackUrls must contain at least one URL for CUSTOM agent type\")."
+          },
+          "field": {
+            "type": "string",
+            "description": "A JSON-path-like string indicating which field in the request body failed (e.g., /redirectCallbackUrls)."
+          }
+        }
+      }
+    },
+    "responses": {
+      "ValidationError": {
+        "description": "Validation error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ValidationError"
+            }
+          }
+        }
+      },
+      "ForbiddenError": {
+        "description": "Forbidden",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "examples": {
+              "Example 1": {
+                "value": {
+                  "code": "AUTHZ_DENIED",
+                  "message": "User not authorized",
+                  "description": "Role lacks required permission"
+                }
+              }
+            }
+          }
+        }
+      },
+      "ConflictError": {
+        "description": "Conflict",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "RateLimitError": {
+        "description": "Rate limited",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "InternalError": {
+        "description": "Internal server error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFoundError": {
+        "description": "Not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "UnprocessableError": {
+        "description": "Unprocessable entity",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "parameters": {
+      "AgentIdPath": {
+        "name": "agentId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "description": "A bearer token in the format of a JWS and conforms to the specifications included in RFC8725.",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "x-stoplight": {
+    "id": "wa7dppiliocew"
+  }
+}
