@@ -1,0 +1,17 @@
+{
+    "name": "Auto-registered Agent",
+    "type": "PERPLEXITY",
+    "description": "This is my auto-registered agent",
+    "owner": "ai.admin@cyberark.com",
+    "tags": {
+        "environment": "development",
+        "team": "AI"
+    },
+    "redirectCallbackUrls": [
+        "https://devapp.com/callback"
+    ],
+    "additionalProperties": {
+        "customProperty1": "value1",
+        "customProperty2": "value2"
+    }
+}
