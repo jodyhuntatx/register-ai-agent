@@ -16,8 +16,8 @@ function showUsage() {
     echo; echo
     echo "Usage:"
     echo "$0 [ lis | list_agents ]"
-    echo "$0 [ add | add_agent ] <agent_file.json>"
-    echo "$0 [ upd | update_agent ] <agent_id> <agent_file.json>"
+    echo "$0 [ add | add_agent ] <agent.json>"
+    echo "$0 [ upd | update_agent ] <agent_id> <agent.json>"
     echo "$0 [ del | delete_agent ] <agent_id>"
     echo; echo
     exit 1
@@ -55,8 +55,8 @@ main() {
                 exit 1
             fi
             if ! jq -M . "$agent_file" > /dev/null 2>&1; then
-            echo "❌ Invalid JSON"
-            exit 1
+                echo "❌ Invalid JSON"
+                exit 1
             fi
             command="update_agent"
             ;;
@@ -82,15 +82,30 @@ main() {
 function oauth2ClientAuthenticate() {
   $util_defaults
 #  echo "Authenticating user $CYBERARK_ADMIN_USER..."
-  AUTH_TOKEN=$($CURL                                             	\
+
+  response=$($CURL                                             	\
         -X POST                                                         \
         "${CYBERARK_IDENTITY_URL}/oauth2/platformtoken"     		\
+        --write-out '\n%{http_code}'                                \
         -H "Content-Type: application/x-www-form-urlencoded"            \
         --data-urlencode "grant_type"="client_credentials"              \
         --data-urlencode "client_id"="$CYBERARK_ADMIN_USER"             \
-        --data-urlencode "client_secret"="$CYBERARK_ADMIN_PWD"        	\
-        | jq -r .access_token)
-  authHeader="Authorization: Bearer $AUTH_TOKEN"
+        --data-urlencode "client_secret"="$CYBERARK_ADMIN_PWD")
+    http_code=$(tail -n1 <<< "$response")  # get http_code on last line
+    content=$(sed '$ d' <<< "$response")   # trim http_code from content
+
+    case $http_code in
+        200)
+            AUTH_TOKEN=$(echo "$content" | jq -r .access_token)
+            authHeader="Authorization: Bearer $AUTH_TOKEN"
+            ;;
+        *)
+            echo "{ \"message\": \"Failed to authenticate service account $CYBERARK_ADMIN_USER.\",
+            \"http_code\": $http_code,
+            \"response\": $content }"
+            ;;
+    esac
+
 }
 
 #####################################
@@ -108,9 +123,9 @@ function list_agents() {
             echo "$content" | jq .
             ;;
         *)
-            echo "Failed to list agents."
-            echo "HTTP code: $http_code"
-            echo "$content"
+            echo "{ \"message\": \"Failed to list agents.\",
+            \"http_code\": $http_code,
+            \"response\": $content }"
             ;;
     esac
 }
@@ -133,9 +148,10 @@ function delete_agent() {
             echo "Agent ID $agent_id not found."
             ;;
         *)
-            echo "Failed to delete agent."
-            echo "HTTP code: $http_code"
-            echo "$content"
+            echo "{ \"message\": \"Failed to delete agent.\",
+            \"id\": \"$agent_id\",
+            \"http_code\": $http_code,
+            \"response\": $content }"
             ;;
     esac
 }
@@ -159,8 +175,8 @@ function add_agent() {
             ;;
         *)
             echo "{ \"message\": \"Failed to add agent.\",
-                    \"http_code\": $http_code,
-                    \"response\": $content }"
+            \"http_code\": $http_code,
+            \"response\": $content }"
             ;;
     esac
 }
@@ -186,9 +202,10 @@ function update_agent() {
             echo "Agent ID $agent_id not found."
             ;;
         *)
-            echo "Failed to update agent."
-            echo "HTTP code: $http_code"
-            echo "$content"
+            echo "{ \"message\": \"Failed to update agent.\",
+            \"id\": \"$agent_id\",
+            \"http_code\": $http_code,
+            \"response\": $content }"
             ;;
     esac
 }
