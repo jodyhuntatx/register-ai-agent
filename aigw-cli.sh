@@ -8,8 +8,7 @@ util_defaults="set -u"
 
 # Predefined agent types (strings):
 #    CHATGPT, CLAUDE, GEMINI, COPILOT, PERPLEXITY, SALESFORCE, SERVICENOW, GROK, CUSTOM
-# Agent status values (AgentStatusAgentStatusValue.enums):
-#    ACTIVE, PENDING_CONNECTION, SUSPENDED
+
 
 #####################################
 function showUsage() {
@@ -17,6 +16,7 @@ function showUsage() {
     echo "Usage:"
     echo "$0 [ lis | list_agents ]"
     echo "$0 [ add | add_agent ] <agent.json>"
+    echo "$0 [ loo | lookup_agent_by_name ] <agent_name>"
     echo "$0 [ upd | update_agent ] <agent_id> <agent.json>"
     echo "$0 [ del | delete_agent ] <agent_id>"
     echo; echo
@@ -28,6 +28,14 @@ main() {
     case $command in
         list_agents | lis*)
             command="list_agents"
+            ;;
+        lookup_agent_by_kv_pair | loo*)
+            if [[ $# != 3 ]]; then
+                showUsage $@
+            fi
+            agent_key="$2"
+            agent_value="$3"
+            command="lookup_agent_by_kv_pair"
             ;;
         add_agent | add*)
             if [[ $# != 2 ]]; then
@@ -102,7 +110,8 @@ function oauth2ClientAuthenticate() {
         *)
             echo "{ \"message\": \"Failed to authenticate service account $CYBERARK_ADMIN_USER.\",
             \"http_code\": $http_code,
-            \"response\": $content }"
+            \"response\": $content }" | jq .
+            exit 1
             ;;
     esac
 
@@ -125,9 +134,26 @@ function list_agents() {
         *)
             echo "{ \"message\": \"Failed to list agents.\",
             \"http_code\": $http_code,
-            \"response\": $content }"
+            \"response\": $content }" | jq .
+            exit 1
             ;;
     esac
+}
+
+#####################################
+function lookup_agent_by_kv_pair() {
+    $util_defaults
+    agent_list_json=$(list_agents)
+    agent_rec=$(echo "$agent_list_json" | jq -r "[ .agents[] | select(.$agent_key == \"$agent_value\") ]")
+    case $agent_rec in
+        "")
+            echo "{\"message\":\"Agent with key \"$agent_key\" and value \"$agent_value\" not found.\"}" | jq .
+            exit 1
+            ;;
+        *)
+            echo "$agent_rec" | jq .
+            ;;
+    esac 
 }
 
 #####################################
@@ -151,7 +177,8 @@ function delete_agent() {
             echo "{ \"message\": \"Failed to delete agent.\",
             \"id\": \"$agent_id\",
             \"http_code\": $http_code,
-            \"response\": $content }"
+            \"response\": $content }" | jq .
+            exit 1
             ;;
     esac
 }
@@ -176,7 +203,8 @@ function add_agent() {
         *)
             echo "{ \"message\": \"Failed to add agent.\",
             \"http_code\": $http_code,
-            \"response\": $content }"
+            \"response\": $content }" | jq .
+            exit 1
             ;;
     esac
 }
@@ -205,7 +233,8 @@ function update_agent() {
             echo "{ \"message\": \"Failed to update agent.\",
             \"id\": \"$agent_id\",
             \"http_code\": $http_code,
-            \"response\": $content }"
+            \"response\": $content }" | jq .
+            exit
             ;;
     esac
 }
