@@ -1,5 +1,10 @@
 #!/bin/bash
 
+if [[ "$(which jq)" == "" ]]; then
+  echo "AI Gateway CLI requires jq."
+  exit 1
+fi
+
 source demo-vars.sh
 
 CURL="curl -s"
@@ -16,7 +21,7 @@ function showUsage() {
     echo "Usage:"
     echo "$0 [ lis | list_agents ]"
     echo "$0 [ add | add_agent ] <agent.json>"
-    echo "$0 [ loo | lookup_agent_by_name ] <agent_name>"
+    echo "$0 [ loo | lookup_agent_by_kv_pair ] <key> <value>"
     echo "$0 [ upd | update_agent ] <agent_id> <agent.json>"
     echo "$0 [ del | delete_agent ] <agent_id>"
     echo; echo
