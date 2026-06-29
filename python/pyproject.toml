@@ -1,0 +1,9 @@
+[project]
+name = "reg-agent"
+version = "0.1.0"
+description = "Script to register a new agent during provisioning."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "requests>=2.34.2",
+]
